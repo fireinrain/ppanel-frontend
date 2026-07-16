@@ -19,6 +19,41 @@ This document records all notable changes to ShadCN Admin.
 ---
 
 
+## [1.11.0](https://github.com/perfect-panel/frontend/compare/v1.10.4...v1.11.0) (2026-07-14)
+
+### ✨ Features / 新功能
+
+* support subscription token user search ([1884b36](https://github.com/perfect-panel/frontend/commit/1884b3609dcd746110f09c30889a7c6a5a959e5d))
+
+### 🐛 Bug Fixes / 问题修复
+
+* copy subscription URL on app import ([79334ba](https://github.com/perfect-panel/frontend/commit/79334bafb41a581cd413856e16533c0fb18d0380))
+* load admin store lookup data by pages ([b5091b3](https://github.com/perfect-panel/frontend/commit/b5091b3dc163d7309410877b0fb4270a483e4876))
+
+### 👷 Continuous Integration / CI/CD
+
+* trigger release workflow on published releases ([700fc05](https://github.com/perfect-panel/frontend/commit/700fc05ebc1fc71cbffd2227ae4a3cc5ba0bb5dc))
+
+### 🔧 Chores / 其他变更
+
+* **release:** Release 1.11.0-dev.1 / 发布版本 1.11.0-dev.1 [skip ci] ([6ee8d96](https://github.com/perfect-panel/frontend/commit/6ee8d9679de0534e0715b238db0a5bee7fa373f2))
+
+## [1.11.0-dev.1](https://github.com/perfect-panel/frontend/compare/v1.10.2...v1.11.0-dev.1) (2026-07-14)
+
+### ✨ Features / 新功能
+
+* support subscription token user search ([1884b36](https://github.com/perfect-panel/frontend/commit/1884b3609dcd746110f09c30889a7c6a5a959e5d))
+
+### 🐛 Bug Fixes / 问题修复
+
+* remove invalid favicon mime type ([313beb2](https://github.com/perfect-panel/frontend/commit/313beb2bfd8c9d1999e3aea799f05d906105b444))
+* unblock frontend release workflow ([e9ed6ea](https://github.com/perfect-panel/frontend/commit/e9ed6eac8f780277b291dfcfddab43babf81a8b6))
+
+### 🔧 Chores / 其他变更
+
+* **release:** Release 1.10.1-dev.1 / 发布版本 1.10.1-dev.1 [skip ci] ([8649a93](https://github.com/perfect-panel/frontend/commit/8649a9338cc712f136186b6c4bfc9961875a4a9e))
+* **release:** Release 1.10.1-dev.2 / 发布版本 1.10.1-dev.2 [skip ci] ([9fa0781](https://github.com/perfect-panel/frontend/commit/9fa07813faadbb1d5bb35416fe161edd3bc88ab6))
+
 ## [1.10.2](https://github.com/perfect-panel/frontend/compare/v1.10.1...v1.10.2) (2026-07-10)
 
 ### 🐛 Bug Fixes / 问题修复
