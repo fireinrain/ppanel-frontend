@@ -137,6 +137,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         ...base,
         type: "mieru",
         transport: "tcp",
+        multiplex: "MULTIPLEXING_LOW",
         traffic_pattern: null,
         user_hint_is_mandatory: false,
       } as any;

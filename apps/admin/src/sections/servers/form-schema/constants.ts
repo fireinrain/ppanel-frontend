@@ -45,6 +45,10 @@ export const LABELS = {
   h2mux: "H2Mux",
   smux: "SMux",
   yamux: "YAMux",
+  MULTIPLEXING_OFF: "Off",
+  MULTIPLEXING_LOW: "Low",
+  MULTIPLEXING_MIDDLE: "Middle",
+  MULTIPLEXING_HIGH: "High",
   default: "Default",
   unshaped: "Unshaped",
   "unsafe-raw": "Unsafe Raw",
@@ -107,7 +111,7 @@ export const TRANSPORTS = {
 export const SECURITY = {
   vmess: ["none", "tls", "reality"] as const,
   vless: ["none", "tls", "reality"] as const,
-  trojan: ["none", "tls", "reality"] as const,
+  trojan: ["tls"] as const,
   hysteria2: ["tls"] as const,
   tuic: ["tls"] as const,
   anytls: ["tls", "reality"] as const,
@@ -152,6 +156,12 @@ export const FINGERPRINTS = [
 export const CERT_MODES = ["none", "file", "self", "http", "dns"] as const;
 
 export const multiplexLevels = ["none", "h2mux", "smux", "yamux"] as const;
+export const MIERU_MULTIPLEX = [
+  "MULTIPLEXING_OFF",
+  "MULTIPLEXING_LOW",
+  "MULTIPLEXING_MIDDLE",
+  "MULTIPLEXING_HIGH",
+] as const;
 
 export const SNELL_VERSIONS = ["5", "6"] as const;
 export const SNELL_OBFS = ["none", "http", "tls"] as const;

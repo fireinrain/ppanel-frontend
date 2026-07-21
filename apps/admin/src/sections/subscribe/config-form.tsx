@@ -30,7 +30,7 @@ import {
   updateSubscribeConfig,
 } from "@workspace/ui/services/admin/system";
 import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { type Resolver, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -43,6 +43,8 @@ const subscribeConfigSchema = z.object({
   user_agent_limit: z.boolean().optional(),
   user_agent_list: z.string().optional(),
   show_tutorial: z.boolean().optional(),
+  profile_update_interval: z.coerce.number().int().min(0).optional(),
+  profile_web_page_url: z.string().optional(),
 });
 
 type SubscribeConfigFormData = z.infer<typeof subscribeConfigSchema>;
@@ -62,7 +64,9 @@ export default function ConfigForm() {
   });
 
   const form = useForm<SubscribeConfigFormData>({
-    resolver: zodResolver(subscribeConfigSchema),
+    resolver: zodResolver(
+      subscribeConfigSchema
+    ) as Resolver<SubscribeConfigFormData>,
     defaultValues: {
       single_model: false,
       pan_domain: false,
@@ -71,6 +75,8 @@ export default function ConfigForm() {
       user_agent_limit: false,
       user_agent_list: "",
       show_tutorial: true,
+      profile_update_interval: 0,
+      profile_web_page_url: "",
     },
   });
 
@@ -258,6 +264,64 @@ export default function ConfigForm() {
                       {t(
                         "config.subscriptionDomainDescription",
                         "Custom domain for subscription links"
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="profile_update_interval"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t(
+                        "config.profileUpdateInterval",
+                        "Profile Update Interval"
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <EnhancedInput
+                        min={0}
+                        onValueBlur={(value) => field.onChange(Number(value))}
+                        placeholder="24"
+                        suffix="Hours"
+                        type="number"
+                        value={field.value}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        "config.profileUpdateIntervalDescription",
+                        "Set the profile-update-interval response header in hours. 0 disables this header."
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="profile_web_page_url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("config.profileWebPageUrl", "Profile Web Page URL")}
+                    </FormLabel>
+                    <FormControl>
+                      <EnhancedInput
+                        onValueBlur={field.onChange}
+                        placeholder="https://example.com"
+                        value={field.value}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        "config.profileWebPageUrlDescription",
+                        "Set the profile-web-page-url response header. Leave blank to disable this header."
                       )}
                     </FormDescription>
                     <FormMessage />

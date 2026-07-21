@@ -162,6 +162,9 @@
     "trigger": "Node Config"
   },
   "server_key": "Server Key",
+  "server_key_auto_placeholder": "Leave blank to auto-generate; blank on update keeps current value",
+  "server_password": "Server Password",
+  "server_psk": "Server PSK",
   "service_name": "Service Name",
   "settings": "Hysteria2 Settings",
   "sorted_success": "Sorted successfully",

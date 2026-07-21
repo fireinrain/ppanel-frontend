@@ -6,6 +6,7 @@ import {
   ENCRYPTION_RTT,
   ENCRYPTION_TYPES,
   FLOWS,
+  MIERU_MULTIPLEX,
   multiplexLevels,
   NAIVE_CONGESTION,
   SECURITY,
@@ -180,6 +181,7 @@ const mieru = z.object({
   ...common,
   type: z.literal("mieru"),
   transport: z.enum(TRANSPORTS.mieru).nullish(),
+  multiplex: z.enum(MIERU_MULTIPLEX).nullish(),
   traffic_pattern: nullableString,
   user_hint_is_mandatory: nullableBool,
 });
