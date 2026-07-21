@@ -162,6 +162,9 @@
     "trigger": "节点配置"
   },
   "server_key": "服务器密钥",
+  "server_key_auto_placeholder": "留空自动生成；更新时留空保留当前值",
+  "server_password": "Server Password",
+  "server_psk": "Server PSK",
   "service_name": "服务名称",
   "settings": "Hysteria2 设置",
   "sorted_success": "排序成功",

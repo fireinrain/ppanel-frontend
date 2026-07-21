@@ -12,6 +12,7 @@ import {
   ENCRYPTION_RTT,
   ENCRYPTION_TYPES,
   FLOWS,
+  MIERU_MULTIPLEX,
   multiplexLevels,
   NAIVE_CONGESTION,
   SECURITY,
@@ -51,7 +52,7 @@ function shadowsocksPluginUsesTLS(protocol: Record<string, any>) {
   if (typeof protocol.plugin_opts === "string") {
     return protocol.plugin_opts.split(";").some((item: string) => {
       const [key, value = "true"] = item.split("=", 2);
-      return key.trim() === "tls" && value.trim() !== "false";
+      return key?.trim() === "tls" && value.trim() !== "false";
     });
   }
   const value = pluginOptions(protocol.plugin_opts).tls;
@@ -129,9 +130,7 @@ export function useProtocolFields() {
           condition(protocol) && protocol.cert_mode === "dns",
       },
     ];
-    const streamFields = (
-      transports: readonly string[]
-    ): FieldConfig[] => [
+    const streamFields = (transports: readonly string[]): FieldConfig[] => [
       {
         name: "transport",
         type: "select",
@@ -375,8 +374,7 @@ export function useProtocolFields() {
           defaultValue: "native",
           required: true,
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_ticket",
@@ -385,8 +383,7 @@ export function useProtocolFields() {
           placeholder: "600s",
           required: true,
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_server_padding",
@@ -394,8 +391,7 @@ export function useProtocolFields() {
           label: t("encryption_server_padding", "Server Padding"),
           placeholder: "100-111-1111.75-0-111.50-0-3333",
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_private_key",
@@ -425,8 +421,7 @@ export function useProtocolFields() {
               encryption_password: "publicKey",
             },
           },
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_rtt",
@@ -435,24 +430,21 @@ export function useProtocolFields() {
           options: ENCRYPTION_RTT,
           defaultValue: "0rtt",
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_client_padding",
           type: "input",
           label: t("encryption_client_padding", "Client Padding"),
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
         {
           name: "encryption_password",
           type: "input",
           label: t("encryption_password", "Client Password"),
           group: "encryption",
-          condition: (protocol) =>
-            protocol.encryption === "mlkem768x25519plus",
+          condition: (protocol) => protocol.encryption === "mlkem768x25519plus",
         },
       ],
       trojan: [
@@ -605,6 +597,14 @@ export function useProtocolFields() {
           group: "basic",
         },
         {
+          name: "multiplex",
+          type: "select",
+          label: t("multiplex", "Multiplex"),
+          options: MIERU_MULTIPLEX,
+          defaultValue: "MULTIPLEXING_LOW",
+          group: "transport",
+        },
+        {
           name: "user_hint_is_mandatory",
           type: "switch",
           label: t("user_hint_is_mandatory", "Require User Hint"),
@@ -634,8 +634,11 @@ export function useProtocolFields() {
         {
           name: "server_key",
           type: "input",
-          label: t("server_key", "Server Key"),
-          required: true,
+          label: t("server_password", "Server Password"),
+          placeholder: t(
+            "server_key_auto_placeholder",
+            "Leave blank to auto-generate; blank on update keeps current value"
+          ),
           generate: { function: () => generatePassword(32) },
           group: "basic",
         },
@@ -685,8 +688,11 @@ export function useProtocolFields() {
         {
           name: "server_key",
           type: "input",
-          label: t("server_key", "Pre-shared Key"),
-          required: true,
+          label: t("server_psk", "Server PSK"),
+          placeholder: t(
+            "server_key_auto_placeholder",
+            "Leave blank to auto-generate; blank on update keeps current value"
+          ),
           generate: { function: () => generatePassword(24) },
           group: "basic",
         },
