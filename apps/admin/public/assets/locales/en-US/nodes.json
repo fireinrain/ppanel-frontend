@@ -20,6 +20,8 @@
   "pageTitle": "Nodes",
   "port": "Port",
   "protocol": "Protocol",
+  "protocol_configuration": "Protocol Configuration",
+  "protocol_configuration_desc": "Configure the selected protocol settings",
   "select_protocol": "Select protocol…",
   "select_server": "Select server…",
   "server": "Server",

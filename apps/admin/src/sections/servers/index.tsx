@@ -25,7 +25,6 @@ import OnlineUsersCell from "./online-users-cell";
 import ServerConfig from "./server-config";
 import ServerForm from "./server-form";
 import ServerInstall from "./server-install";
-import ServerNodeConfig from "./server-node-config";
 
 function PctBar({ value }: { value: number }) {
   const v = value.toFixed(2);
@@ -109,8 +108,9 @@ export default function Servers() {
                     id: row.id,
                     ...(values as unknown as Omit<
                       API.UpdateServerRequest,
-                      "id"
+                      "id" | "protocols"
                     >),
+                    protocols: row.protocols,
                   });
                   toast.success(t("updated", "Updated"));
                   ref.current?.refresh();
@@ -126,7 +126,6 @@ export default function Servers() {
               trigger={t("edit", "Edit")}
             />,
             <ServerInstall key="install" server={row} />,
-            <ServerNodeConfig key="node-config" server={row} />,
             <ConfirmButton
               cancelText={t("cancel", "Cancel")}
               confirmText={t("confirm", "Confirm")}
@@ -161,6 +160,7 @@ export default function Servers() {
                   updated_at: _updated_at,
                   last_reported_at: _last_reported_at,
                   status: _status,
+                  protocols: _protocols,
                   ...others
                 } = row as Record<string, unknown>;
                 const body: API.CreateServerRequest = {
@@ -168,7 +168,7 @@ export default function Servers() {
                   country: others.country as string,
                   city: others.city as string,
                   address: others.address as string,
-                  protocols: (others.protocols as API.Protocol[]) || [],
+                  protocols: [],
                 };
                 await createServer(body);
                 toast.success(t("copied", "Copied"));
@@ -323,9 +323,13 @@ export default function Servers() {
                 onSubmit={async (values) => {
                   setLoading(true);
                   try {
-                    await createServer(
-                      values as unknown as API.CreateServerRequest
-                    );
+                    await createServer({
+                      ...(values as unknown as Omit<
+                        API.CreateServerRequest,
+                        "protocols"
+                      >),
+                      protocols: [],
+                    });
                     toast.success(t("created", "Created"));
                     ref.current?.refresh();
                     fetchServers();

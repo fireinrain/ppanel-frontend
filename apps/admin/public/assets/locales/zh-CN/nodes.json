@@ -20,6 +20,8 @@
   "pageTitle": "节点",
   "port": "端口",
   "protocol": "协议",
+  "protocol_configuration": "协议配置",
+  "protocol_configuration_desc": "配置所选协议的设置",
   "select_protocol": "选择协议…",
   "select_server": "选择服务器…",
   "server": "服务器",

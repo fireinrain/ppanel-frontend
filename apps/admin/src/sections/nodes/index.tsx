@@ -19,9 +19,11 @@ import {
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { getProtocolDefaultConfig } from "@/sections/servers/form-schema/defaults";
+import type { ProtocolType } from "@/sections/servers/form-schema/types";
 import { useNode } from "@/stores/node";
 import { useServer } from "@/stores/server";
-import NodeForm from "./node-form";
+import NodeForm, { PROTOCOL_COLORS } from "./node-form";
 
 export default function Nodes() {
   const { t } = useTranslation("nodes");
@@ -44,9 +46,26 @@ export default function Nodes() {
             onSubmit={async (values) => {
               setLoading(true);
               try {
+                const defaultConfig = getProtocolDefaultConfig(
+                  values.protocol as ProtocolType
+                );
+                const currentConfig = values.protocol_config || {};
+                const allowedKeys = Object.keys(defaultConfig);
+                const filteredConfig: Record<string, any> = {};
+                allowedKeys.forEach((key) => {
+                  if (currentConfig[key] !== undefined) {
+                    filteredConfig[key] = currentConfig[key];
+                  }
+                });
+                const mergedConfig = { ...defaultConfig, ...filteredConfig };
+                if (mergedConfig.enable === undefined) {
+                  mergedConfig.enable = true;
+                }
+                mergedConfig.type = values.protocol;
                 const body: API.UpdateNodeRequest = {
                   ...row,
                   ...values,
+                  protocol_config: mergedConfig,
                 } as any;
                 await updateNode(body);
                 toast.success(t("updated", "Updated"));
@@ -94,8 +113,24 @@ export default function Nodes() {
                 created_at: _created_at,
                 ...rest
               } = row as any;
+              const defaultConfig = rest.protocol
+                ? getProtocolDefaultConfig(rest.protocol as ProtocolType)
+                : {};
+              const existingConfig = rest.protocol_config || {};
+              const allowedKeys = Object.keys(defaultConfig);
+              const filteredConfig: Record<string, any> = {};
+              allowedKeys.forEach((key) => {
+                if (existingConfig[key] !== undefined) {
+                  filteredConfig[key] = existingConfig[key];
+                }
+              });
+              const newProtocolConfig = { ...defaultConfig, ...filteredConfig };
+              if (rest.protocol) {
+                newProtocolConfig.type = rest.protocol;
+              }
               await createNode({
                 ...rest,
+                protocol_config: newProtocolConfig,
                 enabled: false,
               });
               toast.success(t("copied", "Copied"));
@@ -172,8 +207,19 @@ export default function Nodes() {
         {
           id: "protocol",
           header: ` ${t("protocol", "Protocol")}:${t("port", "Port")}`,
-          cell: ({ row }) =>
-            `${row.original.protocol}:${getProtocolPort(row.original.server_id, row.original.protocol)}`,
+          cell: ({ row }) => (
+            <div className="flex items-center gap-2">
+              <Badge
+                className={`border ${PROTOCOL_COLORS[row.original.protocol] || "border-gray-200 bg-gray-100 text-gray-700"}`}
+              >
+                {row.original.protocol}
+              </Badge>
+              <span>
+                :
+                {getProtocolPort(row.original.server_id, row.original.protocol)}
+              </span>
+            </div>
+          ),
         },
         {
           accessorKey: "tags",
@@ -199,6 +245,22 @@ export default function Nodes() {
             onSubmit={async (values) => {
               setLoading(true);
               try {
+                const defaultConfig = getProtocolDefaultConfig(
+                  values.protocol as ProtocolType
+                );
+                const currentConfig = values.protocol_config || {};
+                const allowedKeys = Object.keys(defaultConfig);
+                const filteredConfig: Record<string, any> = {};
+                allowedKeys.forEach((key) => {
+                  if (currentConfig[key] !== undefined) {
+                    filteredConfig[key] = currentConfig[key];
+                  }
+                });
+                const mergedConfig = { ...defaultConfig, ...filteredConfig };
+                if (mergedConfig.enable === undefined) {
+                  mergedConfig.enable = true;
+                }
+                mergedConfig.type = values.protocol;
                 const body: API.CreateNodeRequest = {
                   name: values.name,
                   server_id: Number(values.server_id!),
@@ -206,7 +268,8 @@ export default function Nodes() {
                   address: values.address,
                   port: Number(values.port!),
                   tags: values.tags || [],
-                  enabled: false,
+                  enabled: values.enabled ?? false,
+                  protocol_config: mergedConfig,
                 };
                 await createNode(body);
                 toast.success(t("created", "Created"));

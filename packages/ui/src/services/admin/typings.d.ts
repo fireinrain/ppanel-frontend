@@ -265,6 +265,7 @@ declare namespace API {
     server_id: number;
     protocol: string;
     enabled: boolean;
+    protocol_config?: Record<string, any>;
   };
 
   type CreateOrderRequest = {
@@ -2368,6 +2369,7 @@ declare namespace API {
     server_id: number;
     protocol: string;
     enabled: boolean;
+    protocol_config?: Record<string, any>;
   };
 
   type UpdateOrderStatusRequest = {
