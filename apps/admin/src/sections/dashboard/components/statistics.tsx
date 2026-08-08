@@ -33,7 +33,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { UserSubscribeDetail } from "@/sections/user/user-detail";
+import { UserDetail, UserSubscribeDetail } from "@/sections/user/user-detail";
 import { RevenueStatisticsCard } from "./revenue-statistics-card";
 import SystemVersionCard from "./system-version-card";
 import { UserStatisticsCard } from "./user-statistics-card";
@@ -77,11 +77,13 @@ export default function Statistics() {
       today:
         ServerTotal?.user_traffic_ranking_today?.map((item) => ({
           name: item.sid,
+          uid: item.uid,
           traffic: item.download + item.upload,
         })) || [],
       yesterday:
         ServerTotal?.user_traffic_ranking_yesterday?.map((item) => ({
           name: item.sid,
+          uid: item.uid,
           traffic: item.download + item.upload,
         })) || [],
     },
@@ -153,6 +155,14 @@ export default function Statistics() {
                           `${t("nodes", "Nodes")}: ${label}`
                         ) : (
                           <>
+                            {payload?.payload.uid ? (
+                              <>
+                                <div className="w-80">
+                                  <UserDetail id={payload.payload.uid} />
+                                </div>
+                                <Separator className="my-2" />
+                              </>
+                            ) : null}
                             <div className="w-80">
                               <UserSubscribeDetail
                                 enabled={true}

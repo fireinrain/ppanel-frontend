@@ -20,13 +20,19 @@ export type FieldConfig = {
   step?: number;
   suffix?: string;
   generate?: {
-    function?: () =>
+    // Receives the protocol being edited so a generator can depend on a
+    // sibling field, e.g. the Shadowsocks 2022 key length follows the cipher.
+    function?: (
+      protocol?: any
+    ) =>
       | Promise<string | Record<string, string>>
       | string
       | Record<string, string>;
     functions?: {
       label: string;
-      function: () =>
+      function: (
+        protocol?: any
+      ) =>
         | Promise<string | Record<string, string>>
         | string
         | Record<string, string>;

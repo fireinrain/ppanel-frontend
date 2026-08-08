@@ -43,6 +43,10 @@ import { toast } from "sonner";
 import { Display } from "@/components/display";
 import { useGlobalStore } from "@/stores/global";
 import { getPlatform } from "@/utils/common";
+import {
+  getSubscriptionUrlAvailability,
+  isExpiredSubscription,
+} from "@/utils/subscription";
 import Subscribe from "../../subscribe";
 import Renewal from "../../subscribe/renewal";
 import ResetTraffic from "../../subscribe/reset-traffic";
@@ -59,7 +63,8 @@ const platforms: (keyof API.DownloadLink)[] = [
 
 export default function Content() {
   const { t } = useTranslation("dashboard");
-  const { getUserSubscribe, getAppSubLink } = useGlobalStore();
+  const { commonError, getAppSubLink, getUserSubscribe, isLoadingCommon } =
+    useGlobalStore();
 
   const [protocol, setProtocol] = useState("");
 
@@ -220,15 +225,24 @@ export default function Content() {
           </div>
           {userSubscribe.map((item) => {
             // 如果过期时间为0，说明是永久订阅，不应该显示过期状态
-            const isActuallyExpired =
-              item.status === 3 && item.expire_time !== 0;
+            const isActuallyExpired = isExpiredSubscription(item);
             const shouldShowWatermark =
               item.status === 2 || item.status === 4 || isActuallyExpired;
+            const subscriptionUrls = getUserSubscribe(
+              item.short,
+              item.token,
+              protocol
+            );
+            const subscriptionUrlAvailability = getSubscriptionUrlAvailability({
+              error: Boolean(commonError),
+              isLoading: isLoadingCommon,
+              urls: subscriptionUrls,
+            });
 
             return (
               <Card
                 className={cn("relative", {
-                  "relative opacity-80 grayscale": isActuallyExpired,
+                  "relative opacity-80": isActuallyExpired,
                   "relative hidden opacity-60 blur-[0.3px] grayscale":
                     item.status === 4,
                 })}
@@ -272,7 +286,11 @@ export default function Content() {
                   </div>
                 )}
                 <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
-                  <CardTitle className="font-medium">
+                  <CardTitle
+                    className={cn("font-medium", {
+                      grayscale: isActuallyExpired,
+                    })}
+                  >
                     {item.subscribe.name}
                     <p className="mt-1 text-foreground/50 text-sm">
                       {t("expireAt", "Expires At")}:{" "}
@@ -283,48 +301,52 @@ export default function Content() {
                   </CardTitle>
                   {item.status !== 4 && (
                     <div className="flex flex-wrap gap-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive">
-                            {t("resetSubscription", "Reset Subscription")}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {t("prompt", "Prompt")}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {t(
-                                "confirmResetSubscription",
-                                "Are you sure you want to reset your subscription?"
-                              )}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>
-                              {t("cancel", "Cancel")}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={async () => {
-                                await resetUserSubscribeToken({
-                                  user_subscribe_id: item.id,
-                                });
-                                await refetch();
-                                toast.success(
-                                  t("resetSuccess", "Reset Success")
-                                );
-                              }}
-                            >
-                              {t("confirm", "Confirm")}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <ResetTraffic
-                        id={item.id}
-                        replacement={item.subscribe.replacement}
-                      />
+                      {!isActuallyExpired && (
+                        <>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive">
+                                {t("resetSubscription", "Reset Subscription")}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {t("prompt", "Prompt")}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {t(
+                                    "confirmResetSubscription",
+                                    "Are you sure you want to reset your subscription?"
+                                  )}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  {t("cancel", "Cancel")}
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={async () => {
+                                    await resetUserSubscribeToken({
+                                      user_subscribe_id: item.id,
+                                    });
+                                    await refetch();
+                                    toast.success(
+                                      t("resetSuccess", "Reset Success")
+                                    );
+                                  }}
+                                >
+                                  {t("confirm", "Confirm")}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                          <ResetTraffic
+                            id={item.id}
+                            replacement={item.subscribe.replacement}
+                          />
+                        </>
+                      )}
                       {item.expire_time !== 0 && item.subscribe.sell && (
                         <Renewal id={item.id} subscribe={item.subscribe} />
                       )}
@@ -336,7 +358,7 @@ export default function Content() {
                     </div>
                   )}
                 </CardHeader>
-                <CardContent>
+                <CardContent className={cn({ grayscale: isActuallyExpired })}>
                   <ul className="grid grid-cols-2 gap-3 *:flex *:flex-col *:justify-between lg:grid-cols-4">
                     <li>
                       <span className="text-muted-foreground">
@@ -380,25 +402,42 @@ export default function Content() {
                         {t("expirationDays", "Expiration Days")}
                       </span>
                       <span className="font-semibold text-2xl">
-                        {}
                         {item.expire_time
-                          ? differenceInDays(
-                              new Date(item.expire_time),
-                              new Date()
-                            ) || t("unknown", "Unknown")
+                          ? Math.abs(
+                              differenceInDays(
+                                new Date(item.expire_time),
+                                new Date()
+                              )
+                            )
                           : t("noLimit", "No Limit")}
                       </span>
                     </li>
                   </ul>
                   <Separator className="mt-4" />
-                  <Accordion
-                    className="w-full"
-                    collapsible
-                    defaultValue="0"
-                    type="single"
-                  >
-                    {getUserSubscribe(item.short, item.token, protocol)?.map(
-                      (url, index) => (
+                  {subscriptionUrlAvailability === "loading" && (
+                    <p className="py-4 text-center text-muted-foreground text-sm">
+                      {t(
+                        "loadingSubscriptionConfig",
+                        "Loading subscription configuration..."
+                      )}
+                    </p>
+                  )}
+                  {subscriptionUrlAvailability === "unavailable" && (
+                    <p className="py-4 text-center text-destructive text-sm">
+                      {t(
+                        "subscriptionConfigUnavailable",
+                        "Subscription configuration is unavailable. Please refresh and try again."
+                      )}
+                    </p>
+                  )}
+                  {subscriptionUrlAvailability === "ready" && (
+                    <Accordion
+                      className="w-full"
+                      collapsible
+                      defaultValue="0"
+                      type="single"
+                    >
+                      {subscriptionUrls.map((url, index) => (
                         <AccordionItem key={url} value={String(index)}>
                           <AccordionTrigger className="hover:no-underline">
                             <div className="flex w-full flex-row items-center justify-between">
@@ -583,9 +622,9 @@ export default function Content() {
                             </div>
                           </AccordionContent>
                         </AccordionItem>
-                      )
-                    )}
-                  </Accordion>
+                      ))}
+                    </Accordion>
+                  )}
                 </CardContent>
               </Card>
             );

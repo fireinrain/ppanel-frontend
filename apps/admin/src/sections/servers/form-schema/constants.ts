@@ -52,13 +52,31 @@ export const LABELS = {
   default: "Default",
   unshaped: "Unshaped",
   "unsafe-raw": "Unsafe Raw",
+  // ssr protocol
+  auth_aes128_md5: "Auth AES128 MD5",
+  auth_aes128_sha1: "Auth AES128 SHA1",
+  auth_chain_a: "Auth Chain A",
+  auth_chain_b: "Auth Chain B",
+  auth_chain_c: "Auth Chain C",
+  auth_chain_d: "Auth Chain D",
+  auth_chain_e: "Auth Chain E",
+  auth_chain_f: "Auth Chain F",
+  // ssr obfs
+  plain: "Plain",
+  http_simple: "HTTP Simple",
+  http_post: "HTTP POST",
+  "tls1.0_session_auth": "TLS 1.0 Session Auth",
+  "tls1.2_ticket_auth": "TLS 1.2 Ticket Auth",
+  "tls1.2_ticket_fastauth": "TLS 1.2 Ticket FastAuth",
 } as const;
 
 // Flat arrays for enum-like sets
 export const SS_CIPHERS = [
   "aes-128-gcm",
+  "aes-192-gcm",
   "aes-256-gcm",
   "chacha20-ietf-poly1305",
+  "xchacha20-ietf-poly1305",
   "2022-blake3-aes-128-gcm",
   "2022-blake3-aes-256-gcm",
 ] as const;
@@ -86,16 +104,24 @@ export const SSR_CIPHERS = [
   "chacha20-ietf",
 ] as const;
 
+// Only the protocols that carry a wire UID: origin and the legacy verify/auth
+// families cap the node at exactly one active user.
 export const SSR_PROTOCOLS = [
   "auth_aes128_md5",
   "auth_aes128_sha1",
   "auth_chain_a",
+  "auth_chain_b",
+  "auth_chain_c",
+  "auth_chain_d",
+  "auth_chain_e",
+  "auth_chain_f",
 ] as const;
 
 export const SSR_OBFS = [
   "plain",
   "http_simple",
   "http_post",
+  "tls1.0_session_auth",
   "tls1.2_ticket_auth",
   "tls1.2_ticket_fastauth",
 ] as const;
@@ -111,7 +137,7 @@ export const TRANSPORTS = {
 export const SECURITY = {
   vmess: ["none", "tls", "reality"] as const,
   vless: ["none", "tls", "reality"] as const,
-  trojan: ["tls"] as const,
+  trojan: ["tls", "reality"] as const,
   hysteria2: ["tls"] as const,
   tuic: ["tls"] as const,
   anytls: ["tls", "reality"] as const,

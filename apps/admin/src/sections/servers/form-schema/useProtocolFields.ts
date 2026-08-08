@@ -5,6 +5,7 @@ import {
   generatePassword,
   generateRealityKeyPair,
   generateRealityShortId,
+  generateShadowsocks2022Key,
 } from "../generate";
 import {
   CERT_MODES,
@@ -97,6 +98,14 @@ export function useProtocolFields() {
         label: t("security_sni", "SNI"),
         required: true,
         placeholder: "node.example.com",
+        group: "security",
+        condition,
+      },
+      {
+        name: "allow_insecure",
+        type: "switch",
+        label: t("security_allow_insecure", "Allow Insecure"),
+        defaultValue: false,
         group: "security",
         condition,
       },
@@ -265,6 +274,28 @@ export function useProtocolFields() {
       },
     ];
 
+    // TLS ECH. Only the protocols whose inbound terminates TLS get it; the
+    // node has no ECH support on Shadowsocks, so it is left out there.
+    const echFields = (): FieldConfig[] => [
+      {
+        name: "ech_enable",
+        type: "switch",
+        label: t("ech_enable", "ECH"),
+        defaultValue: false,
+        group: "security",
+        condition: (protocol) => protocol.security === "tls",
+      },
+      {
+        name: "ech_server_name",
+        type: "input",
+        label: t("ech_server_name", "ECH Server Name"),
+        placeholder: "public.example.com",
+        group: "security",
+        condition: (protocol) =>
+          protocol.security === "tls" && protocol.ech_enable === true,
+      },
+    ];
+
     const streamSecurity = (values: readonly string[]): FieldConfig => ({
       name: "security",
       type: "select",
@@ -291,7 +322,14 @@ export function useProtocolFields() {
           name: "server_key",
           type: "input",
           label: t("server_key", "Server Key"),
-          generate: { function: () => generatePassword(32) },
+          placeholder: t(
+            "server_key_auto_placeholder",
+            "Leave blank to auto-generate; blank on update keeps current value"
+          ),
+          generate: {
+            function: (protocol) =>
+              generateShadowsocks2022Key(protocol?.cipher),
+          },
           group: "basic",
           condition: (protocol) => String(protocol.cipher).startsWith("2022-"),
         },
@@ -338,6 +376,7 @@ export function useProtocolFields() {
         ...streamFields(TRANSPORTS.vmess),
         streamSecurity(SECURITY.vmess),
         ...certificateFields((protocol) => protocol.security === "tls"),
+        ...echFields(),
         ...realityFields(),
       ],
       vless: [
@@ -357,6 +396,7 @@ export function useProtocolFields() {
         },
         streamSecurity(SECURITY.vless),
         ...certificateFields((protocol) => protocol.security === "tls"),
+        ...echFields(),
         ...realityFields(),
         {
           name: "encryption",
@@ -453,6 +493,7 @@ export function useProtocolFields() {
         ...streamFields(TRANSPORTS.trojan),
         streamSecurity(SECURITY.trojan),
         ...certificateFields((protocol) => protocol.security === "tls"),
+        ...echFields(),
         ...realityFields(),
       ],
       hysteria2: [
@@ -475,6 +516,21 @@ export function useProtocolFields() {
           group: "basic",
         },
         {
+          name: "hop_ports",
+          type: "input",
+          label: t("hop_ports", "Hop Ports"),
+          placeholder: t("hop_ports_placeholder", "e.g. 1-65535"),
+          group: "basic",
+        },
+        {
+          name: "hop_interval",
+          type: "number",
+          label: t("hop_interval", "Hop Interval"),
+          min: 1,
+          suffix: "S",
+          group: "basic",
+        },
+        {
           name: "obfs",
           type: "select",
           label: t("obfs", "Obfuscation"),
@@ -493,6 +549,7 @@ export function useProtocolFields() {
         },
         streamSecurity(SECURITY.hysteria2),
         ...certificateFields(() => true),
+        ...echFields(),
       ],
       tuic: [
         ratio(),
@@ -537,6 +594,7 @@ export function useProtocolFields() {
         multiplex(),
         streamSecurity(SECURITY.tuic),
         ...certificateFields(() => true),
+        ...echFields(),
       ],
       anytls: [
         ratio(),
@@ -551,9 +609,9 @@ export function useProtocolFields() {
           ),
           group: "basic",
         },
-        multiplex(),
         streamSecurity(SECURITY.anytls),
         ...certificateFields((protocol) => protocol.security === "tls"),
+        ...echFields(),
         ...realityFields(),
       ],
       naive: [
@@ -577,6 +635,7 @@ export function useProtocolFields() {
         },
         streamSecurity(SECURITY.naive),
         ...certificateFields(() => true),
+        ...echFields(),
       ],
       mieru: [
         ratio(),
@@ -686,17 +745,6 @@ export function useProtocolFields() {
           group: "basic",
         },
         {
-          name: "server_key",
-          type: "input",
-          label: t("server_psk", "Server PSK"),
-          placeholder: t(
-            "server_key_auto_placeholder",
-            "Leave blank to auto-generate; blank on update keeps current value"
-          ),
-          generate: { function: () => generatePassword(24) },
-          group: "basic",
-        },
-        {
           name: "obfs",
           type: "select",
           label: t("obfs", "Obfuscation"),
@@ -714,7 +762,6 @@ export function useProtocolFields() {
           group: "basic",
           condition: (protocol) => Number(protocol.version) === 6,
         },
-        multiplex(),
       ],
     };
   }, [t]);

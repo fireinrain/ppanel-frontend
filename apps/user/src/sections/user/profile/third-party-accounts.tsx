@@ -375,12 +375,11 @@ export default function ThirdPartyAccounts() {
       }
       await getUserInfo();
     } else {
-      if (account.id === "telegram") {
-        return;
-      }
       const res = await bindOAuth({
         method: account.id,
-        redirect: `${window.location.origin}/bind/${account.id}`,
+        // Trailing slash so static hosting serves /bind/<provider>/index.html,
+        // the page that folds Telegram's fragment result into the hash route.
+        redirect: `${window.location.origin}/bind/${account.id}/`,
       });
       if (res.data?.data?.redirect) {
         window.location.href = res.data.data.redirect;

@@ -37,6 +37,14 @@ const telegramSchema = z.object({
   bot_token: z.string().optional(),
   enable_notify: z.boolean(),
   webhook_domain: z.string().optional(),
+  // Stored as text because the panel round-trips this config as JSON; the
+  // server parses it and disables every group feature when it is empty.
+  group_chat_id: z
+    .string()
+    .optional()
+    .refine((value) => !value?.trim() || /^-?\d+$/.test(value.trim()), {
+      message: "Group chat id must be a number, e.g. -1001234567890",
+    }),
 });
 
 type TelegramFormData = z.infer<typeof telegramSchema>;
@@ -65,6 +73,7 @@ export default function TelegramForm() {
       bot_token: "",
       enable_notify: false,
       webhook_domain: "",
+      group_chat_id: "",
     },
   });
 
@@ -75,6 +84,7 @@ export default function TelegramForm() {
         bot_token: data.config?.bot_token || "",
         enable_notify: data.config?.enable_notify ?? false,
         webhook_domain: data.config?.webhook_domain || "",
+        group_chat_id: data.config?.group_chat_id || "",
       });
     }
   }, [data, form]);
@@ -90,6 +100,7 @@ export default function TelegramForm() {
           bot_token: values.bot_token,
           enable_notify: values.enable_notify,
           webhook_domain: values.webhook_domain,
+          group_chat_id: values.group_chat_id?.trim() || "",
         },
       } as API.UpdateAuthMethodConfigRequest);
       toast.success(t("common.saveSuccess", "Saved successfully"));
@@ -204,6 +215,32 @@ export default function TelegramForm() {
                       {t(
                         "telegram.webhookDomainDescription",
                         "Public HTTPS URL of this server. Leave empty to use long-polling."
+                      )}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="group_chat_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("telegram.groupChatId", "Admin Group Chat ID")}
+                    </FormLabel>
+                    <FormControl>
+                      <EnhancedInput
+                        onValueChange={field.onChange}
+                        placeholder="-1001234567890"
+                        value={field.value}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t(
+                        "telegram.groupChatIdDescription",
+                        "Forum-enabled supergroup that carries notifications, tickets and live chat. The bot must be an administrator with the manage-topics permission. Leave empty to disable every group feature."
                       )}
                     </FormDescription>
                     <FormMessage />
