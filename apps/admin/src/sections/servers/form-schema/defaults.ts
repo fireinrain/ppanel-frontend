@@ -9,6 +9,7 @@ const base = {
 
 const certificate = {
   sni: null,
+  allow_insecure: false,
   cert_mode: "none",
   cert_dns_provider: null,
   cert_dns_env: null,
@@ -23,6 +24,11 @@ const stream = {
   xhttp_extra: null,
   alpn: [],
   multiplex: "none",
+};
+
+const ech = {
+  ech_enable: false,
+  ech_server_name: null,
 };
 
 const reality = {
@@ -54,6 +60,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         ...stream,
         ...certificate,
         ...reality,
+        ...ech,
         type: "vmess",
         security: "none",
       } as any;
@@ -63,6 +70,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         ...stream,
         ...certificate,
         ...reality,
+        ...ech,
         type: "vless",
         security: "none",
         flow: "none",
@@ -81,6 +89,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         ...stream,
         ...certificate,
         ...reality,
+        ...ech,
         type: "trojan",
         security: "tls",
         cert_mode: "self",
@@ -89,8 +98,11 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
       return {
         ...base,
         ...certificate,
+        ...ech,
         type: "hysteria2",
         security: "tls",
+        hop_ports: null,
+        hop_interval: null,
         obfs: "none",
         obfs_password: null,
         up_mbps: null,
@@ -101,6 +113,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
       return {
         ...base,
         ...certificate,
+        ...ech,
         type: "tuic",
         version: 5,
         security: "tls",
@@ -116,16 +129,17 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         ...base,
         ...certificate,
         ...reality,
+        ...ech,
         type: "anytls",
         security: "tls",
         padding_scheme: null,
-        multiplex: "none",
         cert_mode: "self",
       } as any;
     case "naive":
       return {
         ...base,
         ...certificate,
+        ...ech,
         type: "naive",
         security: "tls",
         network: "tcp,udp",
@@ -159,9 +173,7 @@ export function getProtocolDefaultConfig(proto: ProtocolType) {
         type: "snell",
         version: 5,
         mode: "default",
-        server_key: null,
         obfs: "none",
-        multiplex: "none",
       } as any;
     default:
       return {} as any;

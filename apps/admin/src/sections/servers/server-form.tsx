@@ -177,7 +177,8 @@ function DynamicField({
                               <DropdownMenuItem
                                 key={idx}
                                 onClick={async () => {
-                                  const result = await genFunc.function();
+                                  const result =
+                                    await genFunc.function(protocolData);
                                   if (typeof result === "string") {
                                     fieldProps.onChange(result);
                                   } else if (field.generate!.updateFields) {
@@ -203,7 +204,8 @@ function DynamicField({
                       ) : field.generate.function ? (
                         <Button
                           onClick={async () => {
-                            const result = await field.generate!.function!();
+                            const result =
+                              await field.generate!.function!(protocolData);
                             if (typeof result === "string") {
                               fieldProps.onChange(result);
                             } else if (field.generate!.updateFields) {
@@ -567,21 +569,28 @@ export default function ServerForm(props: {
               defaultConfig.multiplex
             ),
           };
-          if (["hysteria2", "tuic", "naive", "trojan"].includes(type)) {
+          // Only these three are TLS-only. anytls and trojan also accept
+          // REALITY, so coercing them here would rewrite a stored REALITY node.
+          if (["hysteria2", "tuic", "naive"].includes(type)) {
             merged.security = "tls";
             if (!merged.cert_mode || merged.cert_mode === "none") {
               merged.cert_mode = "self";
             }
           }
           if (
-            type === "anytls" &&
+            ["anytls", "trojan"].includes(type) &&
             !["tls", "reality"].includes(String(merged.security))
           ) {
             merged.security = "tls";
             merged.cert_mode = "self";
           }
           if (merged.security === "reality") {
-            merged.transport = "tcp";
+            // Never overwrite a stored transport: REALITY rides any stream
+            // transport on vless, and rewriting it here made every edit — even
+            // a rename — silently destroy an xhttp node's configuration.
+            if (!merged.transport) {
+              merged.transport = "tcp";
+            }
             merged.cert_mode = "none";
           }
           return merged;

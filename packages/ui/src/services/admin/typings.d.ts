@@ -2641,7 +2641,10 @@ declare namespace API {
   };
 
   type UserTrafficData = {
+    /** user_subscribe id the traffic was billed to */
     sid: number;
+    /** user id owning the subscription */
+    uid: number;
     upload: number;
     download: number;
   };
