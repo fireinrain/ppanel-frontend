@@ -2,31 +2,36 @@
 
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterRegisterLog } from "@workspace/ui/services/admin/log";
+import { getLogRegisterList as filterRegisterLog } from "@workspace/ui/services/admin/admin";
 import { useTranslation } from "react-i18next";
-import { IpLink } from "@/components/ip-link";
+import { RequestSource } from "@/sections/log/request-source";
 import { UserDetail } from "@/sections/user/user-detail";
 import { formatDate } from "@/utils/common";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function RegisterLogPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "user_id",
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
   const initialFilters = {
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
   };
   return (
-    <ProTable<API.RegisterLog, { date?: string; user_id?: number }>
+    <ProTable<
+      API.RegisterLog,
+      { start_date?: string; end_date?: string; user_id?: number }
+    >
       columns={[
         {
           accessorKey: "user",
@@ -44,32 +49,14 @@ export default function RegisterLogPage() {
           ),
         },
         {
-          accessorKey: "register_ip",
-          header: t("column.ip", "IP"),
+          id: "request_source",
+          header: t("column.requestSource", "Request source"),
           cell: ({ row }) => (
-            <IpLink ip={String((row.original as any).register_ip || "")} />
+            <RequestSource
+              ip={row.original.register_ip}
+              metadata={row.original}
+            />
           ),
-        },
-        {
-          accessorKey: "user_agent",
-          header: t("column.userAgent", "User Agent"),
-          cell: ({ row }) => {
-            const userAgent = String(row.original.user_agent || "");
-            return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="max-w-48 cursor-help truncate">
-                      {userAgent}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="wrap-break-word max-w-md">{userAgent}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          },
         },
         {
           accessorKey: "timestamp",
@@ -79,15 +66,22 @@ export default function RegisterLogPage() {
       ]}
       header={{ title: t("title.register", "Register Log") }}
       initialFilters={initialFilters}
+      onFiltersChange={syncFilters}
       params={[
-        { key: "date", type: "date" },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
         { key: "user_id", placeholder: t("column.userId", "User ID") },
       ]}
       request={async (pagination, filter) => {
         const { data } = await filterRegisterLog({
           page: pagination.page,
           size: pagination.size,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
           user_id: (filter as any)?.user_id,
         });
         const list = (data?.data?.list || []) as any[];

@@ -3,16 +3,24 @@
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterBalanceLog } from "@workspace/ui/services/admin/log";
+import { getLogBalanceList as filterBalanceLog } from "@workspace/ui/services/admin/admin";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
 import { OrderLink } from "@/components/order-link";
+import { RequestSource } from "@/sections/log/request-source";
 import { UserDetail } from "@/sections/user/user-detail";
 import { formatDate } from "@/utils/common";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function BalanceLogPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "user_id",
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -43,11 +51,15 @@ export default function BalanceLogPage() {
   };
 
   const initialFilters = {
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
   };
   return (
-    <ProTable<API.BalanceLog, { search?: string }>
+    <ProTable<
+      API.BalanceLog,
+      { start_date?: string; end_date?: string; search?: string }
+    >
       columns={[
         {
           accessorKey: "user",
@@ -81,6 +93,11 @@ export default function BalanceLogPage() {
           ),
         },
         {
+          id: "request_source",
+          header: t("column.requestSource", "Request source"),
+          cell: ({ row }) => <RequestSource metadata={row.original} />,
+        },
+        {
           accessorKey: "timestamp",
           header: t("column.time", "Time"),
           cell: ({ row }) => formatDate(row.original.timestamp),
@@ -88,15 +105,22 @@ export default function BalanceLogPage() {
       ]}
       header={{ title: t("title.balance", "Balance Log") }}
       initialFilters={initialFilters}
+      onFiltersChange={syncFilters}
       params={[
-        { key: "date", type: "date" },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
         { key: "user_id", placeholder: t("column.userId", "User ID") },
       ]}
       request={async (pagination, filter) => {
         const { data } = await filterBalanceLog({
           page: pagination.page,
           size: pagination.size,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
           user_id: (filter as any)?.user_id,
         });
         const list = (data?.data?.list || []) as any[];

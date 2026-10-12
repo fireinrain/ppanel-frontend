@@ -3,19 +3,28 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { Button } from "@workspace/ui/components/button";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterUserSubscribeTrafficLog } from "@workspace/ui/services/admin/log";
+import { getLogSubscribeTrafficList as filterUserSubscribeTrafficLog } from "@workspace/ui/services/admin/admin";
 import { formatBytes } from "@workspace/ui/utils/formatting";
 import { useTranslation } from "react-i18next";
 import { UserDetail, UserSubscribeDetail } from "@/sections/user/user-detail";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function SubscribeTrafficLogPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "user_id",
+    "user_subscribe_id",
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
   const initialFilters = {
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
     user_subscribe_id: sp.user_subscribe_id
       ? Number(sp.user_subscribe_id)
@@ -24,7 +33,12 @@ export default function SubscribeTrafficLogPage() {
   return (
     <ProTable<
       API.UserSubscribeTrafficLog,
-      { date?: string; user_id?: number; user_subscribe_id?: number }
+      {
+        start_date?: string;
+        end_date?: string;
+        user_id?: number;
+        user_subscribe_id?: number;
+      }
     >
       actions={{
         render: (row) => [
@@ -81,19 +95,26 @@ export default function SubscribeTrafficLogPage() {
       ]}
       header={{ title: t("title.subscribeTraffic", "Subscribe Traffic Log") }}
       initialFilters={initialFilters}
+      onFiltersChange={syncFilters}
       params={[
-        { key: "date", type: "date" },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
         { key: "user_id", placeholder: t("column.userId", "User ID") },
         {
           key: "user_subscribe_id",
-          placeholder: t("column.subscribeId", "Subscribe ID"),
+          placeholder: t("column.userSubscribeId", "User subscription ID"),
         },
       ]}
       request={async (pagination, filter) => {
         const { data } = await filterUserSubscribeTrafficLog({
           page: pagination.page,
           size: pagination.size,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
           user_id: (filter as any)?.user_id,
           user_subscribe_id: (filter as any)?.user_subscribe_id,
         });

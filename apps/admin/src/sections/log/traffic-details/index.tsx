@@ -2,28 +2,41 @@
 
 import { useSearch } from "@tanstack/react-router";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterTrafficLogDetails } from "@workspace/ui/services/admin/log";
+import { getLogTrafficDetails as filterTrafficLogDetails } from "@workspace/ui/services/admin/admin";
 import { formatBytes } from "@workspace/ui/utils/formatting";
 import { useTranslation } from "react-i18next";
 import { UserDetail, UserSubscribeDetail } from "@/sections/user/user-detail";
 import { useServer } from "@/stores/server";
 import { formatDate } from "@/utils/common";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function TrafficDetailsPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "server_id",
+    "user_id",
+    "subscribe_id",
+  ]);
   const { getServerName } = useServer();
 
   const today = new Date().toISOString().split("T")[0];
 
   const initialFilters = {
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
     server_id: sp.server_id ? Number(sp.server_id) : undefined,
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
     subscribe_id: sp.subscribe_id ? Number(sp.subscribe_id) : undefined,
   };
   return (
-    <ProTable<API.TrafficLogDetails, { search?: string }>
+    <ProTable<
+      API.TrafficLogDetails,
+      { start_date?: string; end_date?: string; search?: string }
+    >
       columns={[
         {
           accessorKey: "server_id",
@@ -68,20 +81,27 @@ export default function TrafficDetailsPage() {
       ]}
       header={{ title: t("title.trafficDetails", "Traffic Details") }}
       initialFilters={initialFilters}
+      onFiltersChange={syncFilters}
       params={[
-        { key: "date", type: "date" },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
         { key: "server_id", placeholder: t("column.serverId", "Server ID") },
         { key: "user_id", placeholder: t("column.userId", "User ID") },
         {
           key: "subscribe_id",
-          placeholder: t("column.subscribeId", "Subscribe ID"),
+          placeholder: t("column.userSubscribeId", "User subscription ID"),
         },
       ]}
       request={async (pagination, filter) => {
         const { data } = await filterTrafficLogDetails({
           page: pagination.page,
           size: pagination.size,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
           server_id: (filter as any)?.server_id,
           user_id: (filter as any)?.user_id,
           subscribe_id: (filter as any)?.subscribe_id,

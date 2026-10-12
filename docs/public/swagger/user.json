@@ -44,6 +44,44 @@
                 }
             }
         },
+        "/v1/app/ws/{userid}/{identifier}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Upgrades the connection to the signed-in user's device socket. The client sends \"ping\" (or \"heartbeat\") as its heartbeat and is answered \"ping\"; the server pushes JSON messages such as {\"method\":\"subscribe_update\"}, {\"method\":\"kicked_device\"} and {\"method\":\"kicked_admin\"}.",
+                "tags": [
+                    "user"
+                ],
+                "summary": "Device WebSocket",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID of the signed-in user",
+                        "name": "userid",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Device identifier",
+                        "name": "identifier",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "101": {
+                        "description": "Switching Protocols",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/public/announcement/list": {
             "get": {
                 "security": [
@@ -684,6 +722,12 @@
                         "name": "order_no",
                         "in": "query",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Guest checkout capability; preferred over the checkout_token query parameter",
+                        "name": "X-Checkout-Token",
+                        "in": "header"
                     }
                 ],
                 "responses": {
@@ -1308,6 +1352,7 @@
                         "BearerAuth": []
                     }
                 ],
+                "description": "Binds the email address proven by the code sent to it. Replacing the one the account already has also requires the current password (password), or, for an account without a password, the security code sent to the current email address (current_code), and ends every session of the account.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1346,6 +1391,7 @@
                         "BearerAuth": []
                     }
                 ],
+                "description": "Binds the phone number proven by the code sent to it. Replacing the one the account already has also requires the current password (password), or, for an account without a password, the security code sent to the current phone number (current_code), and ends every session of the account.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1731,6 +1777,30 @@
                 }
             }
         },
+        "/v1/public/user/logout": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Logout",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/result.ResponseSuccessBean"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/public/user/notify": {
             "put": {
                 "security": [
@@ -1812,6 +1882,7 @@
                         "BearerAuth": []
                     }
                 ],
+                "description": "Sets the account's password and ends every session of the account. Changing an existing password requires the current one (old_password); setting the first password of an account with a bound email or phone number requires the security code sent to it (current_code); an account with neither sets it with the session alone. The response lists the third-party sign-in methods (OAuth providers, Telegram) still bound to the account, which the change does not remove.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1837,7 +1908,19 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/result.ResponseSuccessBean"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/result.ResponseSuccessBean"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/dto.UpdateUserPasswordResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     }
                 }
@@ -2719,11 +2802,35 @@
         "dto.BalanceLog": {
             "type": "object",
             "properties": {
+                "actor_id": {
+                    "type": "integer"
+                },
                 "amount": {
                     "type": "integer"
                 },
                 "balance": {
                     "type": "integer"
+                },
+                "client_ip": {
+                    "type": "string"
+                },
+                "ip_as_organization": {
+                    "type": "string"
+                },
+                "ip_asn": {
+                    "type": "integer"
+                },
+                "ip_city": {
+                    "type": "string"
+                },
+                "ip_country": {
+                    "type": "string"
+                },
+                "ip_country_code": {
+                    "type": "string"
+                },
+                "ip_region": {
+                    "type": "string"
                 },
                 "order_no": {
                     "type": "string"
@@ -2733,6 +2840,9 @@
                 },
                 "type": {
                     "type": "integer"
+                },
+                "user_agent": {
+                    "type": "string"
                 },
                 "user_id": {
                     "type": "integer"
@@ -2753,7 +2863,8 @@
                         "google",
                         "apple",
                         "telegram",
-                        "github"
+                        "github",
+                        "facebook"
                     ]
                 }
             }
@@ -2771,7 +2882,8 @@
                         "google",
                         "apple",
                         "telegram",
-                        "github"
+                        "github",
+                        "facebook"
                     ]
                 },
                 "redirect": {
@@ -2848,8 +2960,32 @@
         "dto.CommissionLog": {
             "type": "object",
             "properties": {
+                "actor_id": {
+                    "type": "integer"
+                },
                 "amount": {
                     "type": "integer"
+                },
+                "client_ip": {
+                    "type": "string"
+                },
+                "ip_as_organization": {
+                    "type": "string"
+                },
+                "ip_asn": {
+                    "type": "integer"
+                },
+                "ip_city": {
+                    "type": "string"
+                },
+                "ip_country": {
+                    "type": "string"
+                },
+                "ip_country_code": {
+                    "type": "string"
+                },
+                "ip_region": {
+                    "type": "string"
                 },
                 "order_no": {
                     "type": "string"
@@ -2860,6 +2996,9 @@
                 "type": {
                     "type": "integer"
                 },
+                "user_agent": {
+                    "type": "string"
+                },
                 "user_id": {
                     "type": "integer"
                 }
@@ -2868,7 +3007,8 @@
         "dto.CommissionWithdrawRequest": {
             "type": "object",
             "required": [
-                "amount"
+                "amount",
+                "content"
             ],
             "properties": {
                 "amount": {
@@ -2876,35 +3016,53 @@
                     "maximum": 2000000000
                 },
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 4000
                 }
             }
         },
         "dto.CreateUserTicketFollowRequest": {
             "type": "object",
+            "required": [
+                "content",
+                "ticket_id"
+            ],
             "properties": {
                 "content": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 65535
                 },
                 "from": {
-                    "type": "string"
+                    "description": "From is ignored: the author is always the ticket owner.",
+                    "type": "string",
+                    "maxLength": 255
                 },
                 "ticket_id": {
                     "type": "integer"
                 },
                 "type": {
-                    "type": "integer"
+                    "type": "integer",
+                    "enum": [
+                        0,
+                        1,
+                        2
+                    ]
                 }
             }
         },
         "dto.CreateUserTicketRequest": {
             "type": "object",
+            "required": [
+                "title"
+            ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 10000
                 },
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255
                 }
             }
         },
@@ -3114,6 +3272,10 @@
                 },
                 "user_id": {
                     "type": "integer"
+                },
+                "user_subscribe_id": {
+                    "description": "UserSubscribeId is the user subscription a renewal or traffic reset\norder applies to; zero for other orders and for orders created before\nit was recorded.",
+                    "type": "integer"
                 }
             }
         },
@@ -3161,7 +3323,11 @@
             ],
             "properties": {
                 "auth_type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "email",
+                        "mobile"
+                    ]
                 },
                 "coupon": {
                     "type": "string"
@@ -3766,11 +3932,25 @@
         "dto.UpdateBindEmailRequest": {
             "type": "object",
             "required": [
+                "code",
                 "email"
             ],
             "properties": {
+                "code": {
+                    "description": "Code is the register-type verification code sent to Email.",
+                    "type": "string"
+                },
+                "current_code": {
+                    "description": "CurrentCode is the security-type verification code sent to the email\nthe account already has. Replacing it requires the code when the\naccount has no password.",
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
+                },
+                "password": {
+                    "description": "Password is the account's current password. Replacing an email the\naccount already has requires it when the account has a password; a\nfirst binding does not.",
+                    "type": "string",
+                    "maxLength": 128
                 }
             }
         },
@@ -3786,10 +3966,20 @@
                     "type": "string"
                 },
                 "code": {
+                    "description": "Code is the register-type verification code sent to Mobile.",
+                    "type": "string"
+                },
+                "current_code": {
+                    "description": "CurrentCode is the security-type verification code sent to the number\nthe account already has. Replacing it requires the code when the\naccount has no password.",
                     "type": "string"
                 },
                 "mobile": {
                     "type": "string"
+                },
+                "password": {
+                    "description": "Password is the account's current password. Replacing a number the\naccount already has requires it when the account has a password; a\nfirst binding does not.",
+                    "type": "string",
+                    "maxLength": 128
                 }
             }
         },
@@ -3816,10 +4006,31 @@
                 "password"
             ],
             "properties": {
+                "current_code": {
+                    "description": "CurrentCode is the security-type verification code sent to the email\nor phone number the account has bound. Setting the first password of\nan account that has one bound requires it; an account with neither a\npassword nor a bound email or phone number (OAuth or device sign-in\nonly) sets its first password without it.",
+                    "type": "string"
+                },
+                "old_password": {
+                    "description": "OldPassword is required once the account has a password.",
+                    "type": "string",
+                    "maxLength": 128
+                },
                 "password": {
                     "type": "string",
                     "maxLength": 128,
                     "minLength": 8
+                }
+            }
+        },
+        "dto.UpdateUserPasswordResponse": {
+            "type": "object",
+            "properties": {
+                "third_party_bindings": {
+                    "description": "ThirdPartyBindings lists the types of the third-party sign-in methods\n(OAuth providers, Telegram) still bound to the account, so the client\ncan show them: a binding made during a compromise keeps signing in\nuntil its owner removes it.",
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -3925,7 +4136,8 @@
                     "type": "integer"
                 },
                 "referral_percentage": {
-                    "type": "integer"
+                    "type": "integer",
+                    "maximum": 100
                 },
                 "rules": {
                     "type": "array",
@@ -4010,8 +4222,29 @@
         "dto.UserLoginLog": {
             "type": "object",
             "properties": {
+                "actor_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
+                },
+                "ip_as_organization": {
+                    "type": "string"
+                },
+                "ip_asn": {
+                    "type": "integer"
+                },
+                "ip_city": {
+                    "type": "string"
+                },
+                "ip_country": {
+                    "type": "string"
+                },
+                "ip_country_code": {
+                    "type": "string"
+                },
+                "ip_region": {
+                    "type": "string"
                 },
                 "login_ip": {
                     "type": "string"
@@ -4038,6 +4271,9 @@
                 },
                 "download": {
                     "type": "integer"
+                },
+                "entitlement_source": {
+                    "type": "string"
                 },
                 "expire_time": {
                     "type": "integer"
@@ -4095,6 +4331,9 @@
                 "download": {
                     "type": "integer"
                 },
+                "entitlement_source": {
+                    "type": "string"
+                },
                 "expire_time": {
                     "type": "integer"
                 },
@@ -4148,10 +4387,31 @@
         "dto.UserSubscribeLog": {
             "type": "object",
             "properties": {
+                "actor_id": {
+                    "type": "integer"
+                },
                 "id": {
                     "type": "integer"
                 },
                 "ip": {
+                    "type": "string"
+                },
+                "ip_as_organization": {
+                    "type": "string"
+                },
+                "ip_asn": {
+                    "type": "integer"
+                },
+                "ip_city": {
+                    "type": "string"
+                },
+                "ip_country": {
+                    "type": "string"
+                },
+                "ip_country_code": {
+                    "type": "string"
+                },
+                "ip_region": {
                     "type": "string"
                 },
                 "timestamp": {
@@ -4275,7 +4535,11 @@
             "type": "object",
             "properties": {
                 "auth_type": {
-                    "type": "string"
+                    "type": "string",
+                    "enum": [
+                        "email",
+                        "mobile"
+                    ]
                 },
                 "identifier": {
                     "type": "string"
@@ -4284,6 +4548,9 @@
                     "type": "string"
                 },
                 "password": {
+                    "type": "string"
+                },
+                "turnstile_token": {
                     "type": "string"
                 }
             }

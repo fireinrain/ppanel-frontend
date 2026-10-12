@@ -3,22 +3,34 @@
 import { useSearch } from "@tanstack/react-router";
 import { Badge } from "@workspace/ui/components/badge";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterEmailLog } from "@workspace/ui/services/admin/log";
+import { getLogEmailList as filterEmailLog } from "@workspace/ui/services/admin/admin";
 import { useTranslation } from "react-i18next";
+import { RequestSource } from "@/sections/log/request-source";
 import { formatDate } from "@/utils/common";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function EmailLogPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "search",
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
   const initialFilters = {
     search: sp.search || undefined,
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
   };
   return (
-    <ProTable<API.MessageLog, { search?: string }>
+    <ProTable<
+      API.MessageLog,
+      { start_date?: string; end_date?: string; search?: string }
+    >
       columns={[
         {
           accessorKey: "platform",
@@ -65,6 +77,11 @@ export default function EmailLogPage() {
           },
         },
         {
+          id: "request_source",
+          header: t("column.requestSource", "Request source"),
+          cell: ({ row }) => <RequestSource metadata={row.original} />,
+        },
+        {
           accessorKey: "created_at",
           header: t("column.time", "Time"),
           cell: ({ row }) => formatDate(row.original.created_at),
@@ -72,13 +89,27 @@ export default function EmailLogPage() {
       ]}
       header={{ title: t("title.email", "Email Log") }}
       initialFilters={initialFilters}
-      params={[{ key: "search" }, { key: "date", type: "date" }]}
+      onFiltersChange={syncFilters}
+      params={[
+        {
+          key: "search",
+          label: t("column.query", "Recipient or content"),
+          placeholder: t("column.queryPlaceholder", "Search messages"),
+        },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
+      ]}
       request={async (pagination, filter) => {
         const { data } = await filterEmailLog({
           page: pagination.page,
           size: pagination.size,
           search: filter?.search,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
         });
         const list = ((data?.data?.list || []) as API.MessageLog[]) || [];
         const total = Number(data?.data?.total || list.length);

@@ -1,34 +1,40 @@
 "use client";
 
 import { useSearch } from "@tanstack/react-router";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip";
 import { ProTable } from "@workspace/ui/composed/pro-table/pro-table";
-import { filterSubscribeLog } from "@workspace/ui/services/admin/log";
+import { getLogSubscribeList as filterSubscribeLog } from "@workspace/ui/services/admin/admin";
 import { useTranslation } from "react-i18next";
-import { IpLink } from "@/components/ip-link";
+import { RequestSource } from "@/sections/log/request-source";
 import { UserDetail, UserSubscribeDetail } from "@/sections/user/user-detail";
 import { formatDate } from "@/utils/common";
+import { useTableSearchParams } from "@/utils/use-table-search-params";
 
 export default function SubscribeLogPage() {
   const { t } = useTranslation("log");
   const sp = useSearch({ strict: false }) as Record<string, string | undefined>;
+  const syncFilters = useTableSearchParams([
+    "date",
+    "start_date",
+    "end_date",
+    "user_id",
+    "user_subscribe_id",
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
   const initialFilters = {
-    date: sp.date || today,
+    start_date: sp.start_date || (sp.end_date ? undefined : sp.date || today),
+    end_date: sp.end_date || (sp.start_date ? undefined : sp.date || today),
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
     user_subscribe_id: sp.user_subscribe_id
       ? Number(sp.user_subscribe_id)
       : undefined,
   };
   return (
-    <ProTable<API.SubscribeLog, { date?: string; user_id?: number }>
+    <ProTable<
+      API.SubscribeLog,
+      { start_date?: string; end_date?: string; user_id?: number }
+    >
       columns={[
         {
           accessorKey: "user",
@@ -47,32 +53,9 @@ export default function SubscribeLogPage() {
           ),
         },
         {
-          accessorKey: "client_ip",
-          header: t("column.ip", "IP"),
-          cell: ({ row }) => (
-            <IpLink ip={String((row.original as any).client_ip || "")} />
-          ),
-        },
-        {
-          accessorKey: "user_agent",
-          header: t("column.userAgent", "User Agent"),
-          cell: ({ row }) => {
-            const userAgent = String(row.original.user_agent || "");
-            return (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="max-w-48 cursor-help truncate">
-                      {userAgent}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="wrap-break-word max-w-md">{userAgent}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            );
-          },
+          id: "request_source",
+          header: t("column.requestSource", "Request source"),
+          cell: ({ row }) => <RequestSource metadata={row.original} />,
         },
         {
           accessorKey: "timestamp",
@@ -82,19 +65,26 @@ export default function SubscribeLogPage() {
       ]}
       header={{ title: t("title.subscribe", "Subscribe Log") }}
       initialFilters={initialFilters}
+      onFiltersChange={syncFilters}
       params={[
-        { key: "date", type: "date" },
+        {
+          key: "start_date",
+          type: "date",
+          label: t("startDate", "Start date"),
+        },
+        { key: "end_date", type: "date", label: t("endDate", "End date") },
         { key: "user_id", placeholder: t("column.userId", "User ID") },
         {
           key: "user_subscribe_id",
-          placeholder: t("column.subscribeId", "Subscribe ID"),
+          placeholder: t("column.userSubscribeId", "User subscription ID"),
         },
       ]}
       request={async (pagination, filter) => {
         const { data } = await filterSubscribeLog({
           page: pagination.page,
           size: pagination.size,
-          date: (filter as any)?.date,
+          start_date: filter?.start_date,
+          end_date: filter?.end_date,
           user_id: (filter as any)?.user_id,
           user_subscribe_id: (filter as any)?.user_subscribe_id,
         });

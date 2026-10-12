@@ -15,8 +15,8 @@ import {
 import { cn } from "@workspace/ui/lib/utils";
 import {
   getOrderList,
-  updateOrderStatus,
-} from "@workspace/ui/services/admin/order";
+  putOrderStatus as updateOrderStatus,
+} from "@workspace/ui/services/admin/admin";
 import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Display } from "@/components/display";
@@ -60,6 +60,7 @@ export default function Order() {
   const { subscribes, getSubscribeName } = useSubscribe();
 
   const initialFilters = {
+    search: sp.search || undefined,
     user_id: sp.user_id ? Number(sp.user_id) : undefined,
   };
 
